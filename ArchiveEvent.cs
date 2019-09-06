@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace EHReplay
+namespace EHReplayADL
 {
     public struct ArchiveEvent
     {

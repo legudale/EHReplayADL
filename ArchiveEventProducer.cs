@@ -1,33 +1,29 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
-namespace EHReplay
+namespace EHReplayADL
 {
-    public class ArchiveEventProducer
+    internal class ArchiveEventProducer
     {
         private readonly IEventHubArchive _archive;
+        private readonly ExecutionContext _ctx;
 
-        public ArchiveEventProducer(IEventHubArchive archive)
+        public ArchiveEventProducer(ExecutionContext ctx, IEventHubArchive archive)
         {
             _archive = archive;
-
+            _ctx = ctx;
         }
 
-        public IEnumerable<(ArchiveItem, ArchiveEvent)> ProduceEvents()
+        public IEnumerable<ArchiveItem> ProduceItems()
         {
-            var items = _archive.GetItems().ToList();
-            items.Sort();
-            foreach (var item in items)
+            return _archive.GetItems();
+        }
+
+        public IEnumerable<ArchiveEvent> ProduceEvents(ArchiveItem item)
+        {
+            using (var reader = new AvroStreamReader(_ctx, item.GetStream()))
             {
-                using (var reader = new AvroStreamReader(item.GetStream()))
-                {
-                    foreach (var ev in reader.GetEvents())
-                    {
-                        yield return (item, ev);
-                    }
-                }
+                foreach (var ev in reader.GetEvents()) yield return ev;
             }
         }
     }
-
 }

@@ -3,16 +3,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace EHReplay
+namespace EHReplayADL
 {
     internal class AvroStreamReader : IDisposable
     {
-        internal AvroStreamReader(Stream stream)
+        internal AvroStreamReader(ExecutionContext ctx, Stream stream)
         {
             Stream = stream;
+            Ctx = ctx;
         }
 
-        public Stream Stream { get; }
+        internal Stream Stream { get; }
+        internal ExecutionContext Ctx { get; }
 
         public void Dispose()
         {
@@ -21,14 +23,18 @@ namespace EHReplay
 
         internal IEnumerable<ArchiveEvent> GetEvents()
         {
-            using (var reader = AvroContainer.CreateGenericReader(Stream))
+            if (Stream.Length >= Ctx.MinItemSize)
+
             {
-                while (reader.MoveNext())
-                    foreach (dynamic result in reader.Current.Objects)
-                    {
-                        var record = new ArchiveEvent(result);
-                        yield return record;
-                    }
+                using (var reader = AvroContainer.CreateGenericReader(Stream))
+                {
+                    while (reader.MoveNext())
+                        foreach (dynamic result in reader.Current.Objects)
+                        {
+                            var record = new ArchiveEvent(result);
+                            yield return record;
+                        }
+                }
             }
         }
     }

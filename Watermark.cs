@@ -1,4 +1,6 @@
-﻿namespace EHReplay
+﻿using System;
+
+namespace EHReplayADL
 {
     internal class Watermark
     {
@@ -10,7 +12,7 @@
         {
             Year = item.Year;
             Month = item.Month;
-            Day = item.Year;
+            Day = item.Day;
             Hour = item.Hour;
             Minute = item.Minute;
             Second = item.Second;
@@ -23,24 +25,21 @@
         public int Hour { get; set; }
         public int Minute { get; set; }
         public int Second { get; set; }
+
+
         public long SequenceNumber { get; set; }
 
-        public bool IsHigherOrEqualThan(ArchiveItem item, ArchiveEvent ev)
+
+        public bool IsHigherOrEqualThan(ArchiveItem item, ArchiveEvent? ev)
         {
-            if (Year < item.Year) return false;
-
-            if (Month < item.Month) return false;
-
-            if (Day < item.Day) return false;
-
-            if (Hour < item.Hour) return false;
-
-            if (Minute < item.Minute) return false;
-
-            if (Second < item.Second) return false;
-
-            if (SequenceNumber < ev.SequenceNumber) return false;
-
+            var itemDt = new DateTime(item.Year, item.Month, item.Day, item.Hour, item.Minute, item.Second);
+            var myDt = new DateTime(Year, Month, Day, Hour, Minute, Second);
+            if (myDt > itemDt)
+                return true;
+            if (myDt < itemDt)
+                return false;
+            if (ev.HasValue)
+                return SequenceNumber >= ev.Value.SequenceNumber;
             return true;
         }
     }

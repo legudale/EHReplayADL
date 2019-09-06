@@ -1,45 +1,40 @@
 ﻿using Microsoft.Azure.EventHubs;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 
-namespace EHReplay
+namespace EHReplayADL
 {
-    class ArchiveEventConsumer
+    internal class ArchiveEventConsumer
     {
         private EventHubClient EventHubClient { get; set; }
+        private ExecutionContext Ctx { get; set; }
 
-        public static ArchiveEventConsumer FromConfig(string configFile)
+        public static ArchiveEventConsumer FromConfig(ExecutionContext ctx, IConfigurationRoot config)
         {
-            var config = new ConfigurationBuilder()
-                .AddJsonFile(configFile, true, true)
-                .Build();
-
-            var connectionString = config["destinationEventHubConnectionString"];
+            var connectionString = config["destinationEHConnectionString"];
             var client = EventHubClient.CreateFromConnectionString(connectionString);
-            return new ArchiveEventConsumer()
+            return new ArchiveEventConsumer
             {
-                EventHubClient = client
+                EventHubClient = client,
+                Ctx = ctx
             };
         }
 
-        public bool TryConsumeEvent(ArchiveItem archiveItem, ArchiveEvent archiveEvent)
+
+        public bool TryConsumeBatch(ArchiveItem item, List<ArchiveEvent> events)
         {
-            var eventData = new EventData(archiveEvent.Body);
-            foreach (var entry in archiveEvent.Properties)
+            var batch = new EventDataBatch(Ctx.MaxBatchSize, item.Partition.ToString());
+            foreach (var ev in events)
             {
-                eventData.Properties[entry.Key] = entry.Value;
-
-            }
-
-            foreach (var entry in archiveEvent.SystemProperties)
-            {
-                eventData.SystemProperties[entry.Key] = entry.Value;
-
+                var eventData = new EventData(ev.Body);
+                foreach (var entry in ev.Properties) eventData.Properties[entry.Key] = entry.Value;
+                if (!batch.TryAdd(eventData)) return TryConsumeBatchIndividually(item, events);
             }
 
             try
             {
-                EventHubClient.SendAsync(eventData, archiveItem.Partition.ToString()).Wait();
+                EventHubClient.SendAsync(batch).Wait();
                 return true;
             }
             catch (Exception e)
@@ -47,7 +42,26 @@ namespace EHReplay
                 Console.WriteLine(e);
                 return false;
             }
+        }
 
+        public bool TryConsumeBatchIndividually(ArchiveItem item, List<ArchiveEvent> events)
+        {
+            foreach (var ev in events)
+            {
+                var eventData = new EventData(ev.Body);
+                foreach (var entry in ev.Properties) eventData.Properties[entry.Key] = entry.Value;
+                try
+                {
+                    EventHubClient.SendAsync(eventData, item.Partition.ToString()).Wait();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

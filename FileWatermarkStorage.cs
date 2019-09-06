@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 
-namespace EHReplay
+namespace EHReplayADL
 {
     internal class FileWatermarkStorage : IWatermarkStorage
     {
