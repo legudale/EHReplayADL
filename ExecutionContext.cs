@@ -31,11 +31,13 @@ namespace EHReplayADL
 
             var minItemSizeString = config["minItemSize"];
             ctx.MinItemSize = 1024;
-            if (!string.IsNullOrEmpty(minItemSizeString) && int.TryParse(minItemSizeString, out var minItemSize)) ctx.MinItemSize = minItemSize;
+            if (!string.IsNullOrEmpty(minItemSizeString) && int.TryParse(minItemSizeString, out var minItemSize))
+                ctx.MinItemSize = minItemSize;
 
             var maxBatchSizeString = config["maxBatchSize"];
             ctx.MaxBatchSize = 10 * 1024 * 1024;
-            if (!string.IsNullOrEmpty(maxBatchSizeString) && int.TryParse(maxBatchSizeString, out int maxBatchSize)) ctx.MaxBatchSize = maxBatchSize;
+            if (!string.IsNullOrEmpty(maxBatchSizeString) && int.TryParse(maxBatchSizeString, out var maxBatchSize))
+                ctx.MaxBatchSize = maxBatchSize;
 
             var boundariesString = config["boundaries"];
             ctx.Boundaries = null;
@@ -43,7 +45,7 @@ namespace EHReplayADL
             {
                 var strings = boundariesString.Split(',').Select(s => s.Trim()).ToList();
                 ctx.Boundaries = strings
-                    .Select(s => long.TryParse(s, out long n) ? n : (long?)null)
+                    .Select(s => long.TryParse(s, out var n) ? n : (long?)null)
                     .Where(n => n.HasValue)
                     .Select(n => n.Value)
                     .ToList();

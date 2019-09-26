@@ -43,9 +43,7 @@ namespace EHReplayADL
                         catch (ApplicationException)
                         {
                             if (Ctx.Noisy)
-                            {
                                 Console.WriteLine($"Skipping item with unexpected item name {entry.FullName}");
-                            }
                         }
 
                         if (archiveItem != null)

@@ -49,38 +49,26 @@ namespace EHReplayADL
                         sizePerItem += ev.Body.Length;
 
                         if (ctx.Boundaries != null && item.Partition < ctx.Boundaries.Count)
-                        {
                             if (ev.SequenceNumber > ctx.Boundaries[item.Partition])
                             {
                                 if (ctx.Noisy)
-                                {
-                                    Console.WriteLine($"Skipping sequence number {ev.SequenceNumber} for partiton {item.Partition} as higher than the boundary");
-                                }
+                                    Console.WriteLine(
+                                        $"Skipping sequence number {ev.SequenceNumber} for partiton {item.Partition} as higher than the boundary");
                                 continue;
                             }
 
-                        }
-
-
 
                         if (manager.ShouldProceedWith(item, ev))
-                        {
                             batch.Add(ev);
-                        }
                         else if (ctx.Noisy)
-                        {
                             Console.WriteLine($"skipping sequenceNumber {ev.SequenceNumber} as below the watermark");
-                        }
                     }
 
                     if (!ctx.DryRun)
                     {
                         if (!consumer.TryConsumeBatch(item, batch))
                         {
-                            if (ctx.Noisy)
-                            {
-                                Console.WriteLine("Failed to send events to the Event Hub");
-                            }
+                            if (ctx.Noisy) Console.WriteLine("Failed to send events to the Event Hub");
                         }
                         else
                         {

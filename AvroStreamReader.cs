@@ -25,7 +25,6 @@ namespace EHReplayADL
         {
             if (Stream.Length >= Ctx.MinItemSize)
 
-            {
                 using (var reader = AvroContainer.CreateGenericReader(Stream))
                 {
                     while (reader.MoveNext())
@@ -35,7 +34,6 @@ namespace EHReplayADL
                             yield return record;
                         }
                 }
-            }
         }
     }
 }
