@@ -11,6 +11,7 @@ namespace EHReplayADL
         public int MinItemSize { get; private set; }
         public int MaxBatchSize { get; private set; }
         public List<long> Boundaries { get; private set; }
+        public bool SendIndividually { get; private set; }
 
         public static ExecutionContext FromConfig(IConfigurationRoot config)
         {
@@ -50,6 +51,11 @@ namespace EHReplayADL
                     .Select(n => n.Value)
                     .ToList();
             }
+
+            var sendIdividuallyString = config["sendIndividually"];
+            ctx.SendIndividually = false;
+            if (sendIdividuallyString != null && bool.TryParse(sendIdividuallyString, out var sendIndividually))
+                ctx.SendIndividually = sendIndividually;
 
             return ctx;
         }

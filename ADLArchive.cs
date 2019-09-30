@@ -113,7 +113,7 @@ namespace EHReplayADL
             }
             else
             {
-                if (Ctx.Noisy) Console.WriteLine($"Enumerating starting with ther root {Root}");
+                if (Ctx.Noisy) Console.WriteLine($"Enumerating starting with the root {Root}");
                 var itemEnumerator = new RootArchiveItemEnumerator(Ctx, Client, Root);
                 return itemEnumerator.GetItems();
             }

@@ -64,9 +64,15 @@ namespace EHReplayADL
                             Console.WriteLine($"skipping sequenceNumber {ev.SequenceNumber} as below the watermark");
                     }
 
+
                     if (!ctx.DryRun)
                     {
-                        if (!consumer.TryConsumeBatch(item, batch))
+                        Func<ArchiveItem, List<ArchiveEvent>, bool> tryConsumeFunc = consumer.TryConsumeBatch;
+                        if (ctx.SendIndividually)
+                            tryConsumeFunc = consumer.TryConsumeBatchIndividually;
+
+
+                        if (!tryConsumeFunc(item, batch))
                         {
                             if (ctx.Noisy) Console.WriteLine("Failed to send events to the Event Hub");
                         }
