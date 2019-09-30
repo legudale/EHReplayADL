@@ -58,27 +58,20 @@ namespace EHReplayADL
                             }
 
 
-                        if (manager.ShouldProceedWith(item, ev))
-                            batch.Add(ev);
-                        else if (ctx.Noisy)
-                            Console.WriteLine($"skipping sequenceNumber {ev.SequenceNumber} as below the watermark");
+
                     }
 
 
                     if (!ctx.DryRun)
                     {
-                        Func<ArchiveItem, List<ArchiveEvent>, bool> tryConsumeFunc = consumer.TryConsumeBatch;
+                        Func<ArchiveItem, List<ArchiveEvent>, PartitionWatermarkManager, bool> tryConsumeFunc = consumer.TryConsumeBatch;
                         if (ctx.SendIndividually)
                             tryConsumeFunc = consumer.TryConsumeBatchIndividually;
 
 
-                        if (!tryConsumeFunc(item, batch))
+                        if (!tryConsumeFunc(item, batch, manager))
                         {
                             if (ctx.Noisy) Console.WriteLine("Failed to send events to the Event Hub");
-                        }
-                        else
-                        {
-                            manager.UpdateWatermark(item, batch[batch.Count - 1]);
                         }
                     }
 

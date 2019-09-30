@@ -22,19 +22,28 @@ namespace EHReplayADL
         }
 
 
-        public bool TryConsumeBatch(ArchiveItem item, List<ArchiveEvent> events)
+        public bool TryConsumeBatch(ArchiveItem item, List<ArchiveEvent> events,
+            PartitionWatermarkManager watermarkManager)
         {
             var batch = new EventDataBatch(Ctx.MaxBatchSize, item.Partition.ToString());
             foreach (var ev in events)
             {
+                if (!watermarkManager.ShouldProceedWith(item, ev))
+                {
+                    if (Ctx.Noisy)
+                        Console.WriteLine($"skipping sequenceNumber {ev.SequenceNumber} as below the watermark");
+                    continue;
+                }
+
                 var eventData = new EventData(ev.Body);
                 foreach (var entry in ev.Properties) eventData.Properties[entry.Key] = entry.Value;
-                if (!batch.TryAdd(eventData)) return TryConsumeBatchIndividually(item, events);
+                if (!batch.TryAdd(eventData)) return TryConsumeBatchIndividually(item, events, watermarkManager);
             }
 
             try
             {
                 EventHubClient.SendAsync(batch).Wait();
+                watermarkManager.UpdateWatermark(item, events[events.Count - 1]);
                 return true;
             }
             catch (Exception e)
@@ -44,15 +53,24 @@ namespace EHReplayADL
             }
         }
 
-        public bool TryConsumeBatchIndividually(ArchiveItem item, List<ArchiveEvent> events)
+        public bool TryConsumeBatchIndividually(ArchiveItem item, List<ArchiveEvent> events,
+            PartitionWatermarkManager watermarkManager)
         {
             foreach (var ev in events)
             {
+                if (!watermarkManager.ShouldProceedWith(item, ev))
+                {
+                    if (Ctx.Noisy)
+                        Console.WriteLine($"skipping sequenceNumber {ev.SequenceNumber} as below the watermark");
+                    continue;
+                }
+
                 var eventData = new EventData(ev.Body);
                 foreach (var entry in ev.Properties) eventData.Properties[entry.Key] = entry.Value;
                 try
                 {
                     EventHubClient.SendAsync(eventData, item.Partition.ToString()).Wait();
+                    watermarkManager.UpdateWatermark(item, ev);
                 }
                 catch (Exception e)
                 {
