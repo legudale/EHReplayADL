@@ -54,25 +54,21 @@ namespace EHReplayADL
                                 if (ctx.Noisy)
                                     Console.WriteLine(
                                         $"Skipping sequence number {ev.SequenceNumber} for partiton {item.Partition} as higher than the boundary");
-                                continue;
                             }
-
-
-
                     }
 
 
                     if (!ctx.DryRun)
                     {
-                        Func<ArchiveItem, List<ArchiveEvent>, PartitionWatermarkManager, bool> tryConsumeFunc = consumer.TryConsumeBatch;
+                        Func<ArchiveItem, List<ArchiveEvent>, PartitionWatermarkManager, bool> tryConsumeFunc =
+                            consumer.TryConsumeBatch;
                         if (ctx.SendIndividually)
                             tryConsumeFunc = consumer.TryConsumeBatchIndividually;
 
 
                         if (!tryConsumeFunc(item, batch, manager))
-                        {
-                            if (ctx.Noisy) Console.WriteLine("Failed to send events to the Event Hub");
-                        }
+                            if (ctx.Noisy)
+                                Console.WriteLine("Failed to send events to the Event Hub");
                     }
 
                     if (ctx.Noisy)

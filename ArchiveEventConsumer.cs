@@ -43,14 +43,14 @@ namespace EHReplayADL
             try
             {
                 EventHubClient.SendAsync(batch).Wait();
-                watermarkManager.UpdateWatermark(item, events[events.Count - 1]);
-                return true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine(e);
-                return false;
+                return TryConsumeBatchIndividually(item, events, watermarkManager);
             }
+
+            watermarkManager.UpdateWatermark(item, events[events.Count - 1]);
+            return true;
         }
 
         public bool TryConsumeBatchIndividually(ArchiveItem item, List<ArchiveEvent> events,
@@ -70,13 +70,14 @@ namespace EHReplayADL
                 try
                 {
                     EventHubClient.SendAsync(eventData, item.Partition.ToString()).Wait();
-                    watermarkManager.UpdateWatermark(item, ev);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e.ToString());
                     return false;
                 }
+
+                watermarkManager.UpdateWatermark(item, ev);
             }
 
             return true;
