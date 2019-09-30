@@ -35,7 +35,7 @@ namespace EHReplayADL
                 ctx.MinItemSize = minItemSize;
 
             var maxBatchSizeString = config["maxBatchSize"];
-            ctx.MaxBatchSize = 10 * 1024 * 1024;
+            ctx.MaxBatchSize = 1024 * 1024;
             if (!string.IsNullOrEmpty(maxBatchSizeString) && int.TryParse(maxBatchSizeString, out var maxBatchSize))
                 ctx.MaxBatchSize = maxBatchSize;
 
