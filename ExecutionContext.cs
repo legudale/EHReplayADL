@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace EHReplayADL
 {
-    internal class ExecutionContext
+    public class ExecutionContext
     {
         public bool DryRun { get; private set; }
         public bool Noisy { get; private set; }

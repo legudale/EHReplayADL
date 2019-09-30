@@ -4,14 +4,29 @@ using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.Rest.Azure.Authentication;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace EHReplayADL
 {
-    public class AdlArchive : IEventHubArchive
+    public interface IArchiveItemEnumerator
     {
-        public AdlsClient Client { get; private set; }
-        public string Root { get; private set; }
-        internal ExecutionContext Ctx { get; private set; }
+        IEnumerable<ArchiveItem> GetItems();
+    }
+
+    public class RootArchiveItemEnumerator : IArchiveItemEnumerator
+    {
+        public RootArchiveItemEnumerator(ExecutionContext ctx, AdlsClient client, string root)
+        {
+            Ctx = ctx;
+            Client = client;
+            Root = root;
+        }
+
+
+        public ExecutionContext Ctx { get; }
+        public AdlsClient Client { get; }
+        public string Root { get; }
+
 
         public IEnumerable<ArchiveItem> GetItems()
         {
@@ -55,6 +70,54 @@ namespace EHReplayADL
                 foreach (var subdir in subdirs) stack.Push(subdir);
             }
         }
+    }
+
+    public class ListArchiveItemEnumerator : IArchiveItemEnumerator
+    {
+        public ListArchiveItemEnumerator(ExecutionContext ctx, AdlsClient client, string listFileName)
+        {
+            Ctx = ctx;
+            Client = client;
+            ListFileName = listFileName;
+        }
+
+        public ExecutionContext Ctx { get; }
+        public AdlsClient Client { get; }
+        public string ListFileName { get; }
+
+        public IEnumerable<ArchiveItem> GetItems()
+        {
+            foreach (var line in File.ReadAllLines(ListFileName))
+            {
+                var entry = Client.GetDirectoryEntry(line);
+                yield return new ADLArchiveItem(Client, entry);
+            }
+        }
+    }
+
+
+    public class AdlArchive : IEventHubArchive
+    {
+        public AdlsClient Client { get; private set; }
+        public string Root { get; private set; }
+        public string AdlList { get; private set; }
+        internal ExecutionContext Ctx { get; private set; }
+
+        public IEnumerable<ArchiveItem> GetItems()
+        {
+            if (AdlList != null)
+            {
+                if (Ctx.Noisy) Console.WriteLine($"Enumerating based on the list stored in {AdlList}");
+                var itemEnumerator = new ListArchiveItemEnumerator(Ctx, Client, AdlList);
+                return itemEnumerator.GetItems();
+            }
+            else
+            {
+                if (Ctx.Noisy) Console.WriteLine($"Enumerating starting with ther root {Root}");
+                var itemEnumerator = new RootArchiveItemEnumerator(Ctx, Client, Root);
+                return itemEnumerator.GetItems();
+            }
+        }
 
         internal static AdlArchive FromConfig(ExecutionContext ctx, IConfigurationRoot config)
         {
@@ -69,6 +132,7 @@ namespace EHReplayADL
             archive.Client = AdlsClient.CreateClient(path, token);
             archive.Ctx = ctx;
             archive.Root = config["adlRoot"];
+            archive.AdlList = config["adlList"];
 
 
             return archive;
