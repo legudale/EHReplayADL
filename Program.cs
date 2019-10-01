@@ -45,16 +45,21 @@ namespace EHReplayADL
                     foreach (var ev in producer.ProduceEvents(item))
 
                     {
-                        eventsPerItem++;
-                        sizePerItem += ev.Body.Length;
-
-                        if (ctx.Boundaries != null && item.Partition < ctx.Boundaries.Count)
-                            if (ev.SequenceNumber > ctx.Boundaries[item.Partition])
-                            {
-                                if (ctx.Noisy)
-                                    Console.WriteLine(
-                                        $"Skipping sequence number {ev.SequenceNumber} for partiton {item.Partition} as higher than the boundary");
-                            }
+                        var skipEvent = ctx.Boundaries != null
+                                        && item.Partition < ctx.Boundaries.Count
+                                        && ev.SequenceNumber > ctx.Boundaries[item.Partition];
+                        if (!skipEvent)
+                        {
+                            eventsPerItem++;
+                            sizePerItem += ev.Body.Length;
+                            batch.Add(ev);
+                        }
+                        else
+                        {
+                            if (ctx.Noisy)
+                                Console.WriteLine(
+                                    $"Skipping sequence number {ev.SequenceNumber} for partiton {item.Partition} as higher than the boundary");
+                        }
                     }
 
 
