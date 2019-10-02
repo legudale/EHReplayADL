@@ -9,7 +9,9 @@ EventHub supports archival option where the events passed through the Event Hub 
 ## Requirements
 
 - **.net Core SDK 2.2**; can be downloaded from [https://dotnet.microsoft.com/download](https://dotnet.microsoft.com/download)
+
 - **Event Hub archive in the Azure Data Lake**. It is necessary to create a security principal which has read and execute permissions on the whole Data Lake from the root folder to all of its children, recursively. This is documented here: [https://www.sqlchick.com/entries/2018/3/17/assigning-data-permissions-for-azure-data-lake-store-part-3](https://www.sqlchick.com/entries/2018/3/17/assigning-data-permissions-for-azure-data-lake-store-part-3)
+
 - **The destination Event Hub** The Event Hub where the archive should be replayed to. It MUST have the same number of partitions as the original event hub.
 
 ## Build
@@ -22,7 +24,11 @@ To build the sample run:
 
 
 
+
+
 dotnet build
+
+
 
 
 
@@ -34,7 +40,11 @@ To run the sample execute:
 
 ```
 
+
+
 dotnet run
+
+
 
 ```
 
@@ -60,6 +70,10 @@ The configuration options are:
 
 - **adlRoot** the data lake folder considered to be root of the archive
 
+  **adlList** the name of the text file which contains the explicit list of avro files to be processed. If set, the **adlRoot** setting is ignored
+
 * **destinationEHConnectionString**. The connection string to the destination Event Hub
 
-* **maxBatchSize**, to increase efficiency, before sending events to the destination Event Hub, the sample tries to batch them, if the batching fails, the sample reverts to sending the items individually. This option controls the s
+* **maxBatchSize**, to increase efficiency, before sending events to the destination Event Hub, the sample tries to batch them, if the batching fails, the sample reverts to sending the items individually. This option controls the size of the batch. If not set, defaults to 1MB
+
+**sendIndividually** if set to _true_, disables batching and sends all items individually
